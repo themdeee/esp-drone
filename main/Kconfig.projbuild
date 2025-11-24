@@ -227,7 +227,7 @@ menu "ESPDrone Config"
             default 19 if TARGET_ESPLANE_V1
             range 0 43 if TARGET_ESPLANE_V2_S2
             default 12 if TARGET_ESPLANE_V2_S2
-            range 0 43 if TARGET_ESP32_S2_DRONE_V1_2
+            range 0 48 if TARGET_ESP32_S2_DRONE_V1_2
             default 12 if TARGET_ESP32_S2_DRONE_V1_2
             help
                 GPIO number (IOxx) MPU_PIN_INT
@@ -310,7 +310,7 @@ menu "ESPDrone Config"
             default 4 if TARGET_ESPLANE_V1
             range 0 43 if TARGET_ESPLANE_V2_S2
             default 3 if TARGET_ESPLANE_V2_S2
-            range 0 43 if TARGET_ESP32_S2_DRONE_V1_2
+            range 0 48 if TARGET_ESP32_S2_DRONE_V1_2
             default 5 if TARGET_ESP32_S2_DRONE_V1_2
             help
                 GPIO number (IOxx) MOTOR01_PIN
@@ -321,7 +321,7 @@ menu "ESPDrone Config"
             default 33 if TARGET_ESPLANE_V1
             range 0 43 if TARGET_ESPLANE_V2_S2
             default 4 if TARGET_ESPLANE_V2_S2
-            range 0 43 if TARGET_ESP32_S2_DRONE_V1_2
+            range 0 48 if TARGET_ESP32_S2_DRONE_V1_2
             default 6 if TARGET_ESP32_S2_DRONE_V1_2
             help
                 GPIO number (IOxx) MOTOR02_PIN
@@ -332,7 +332,7 @@ menu "ESPDrone Config"
             default 32 if TARGET_ESPLANE_V1
             range 0 43 if TARGET_ESPLANE_V2_S2
             default 5 if TARGET_ESPLANE_V2_S2
-            range 0 43 if TARGET_ESP32_S2_DRONE_V1_2
+            range 0 48 if TARGET_ESP32_S2_DRONE_V1_2
             default 3 if TARGET_ESP32_S2_DRONE_V1_2
             help
                 GPIO number (IOxx) MOTOR03_PIN
@@ -343,7 +343,7 @@ menu "ESPDrone Config"
             default 25 if TARGET_ESPLANE_V1
             range 0 43 if TARGET_ESPLANE_V2_S2
             default 6 if TARGET_ESPLANE_V2_S2
-            range 0 43 if TARGET_ESP32_S2_DRONE_V1_2
+            range 0 48 if TARGET_ESP32_S2_DRONE_V1_2
             default 4 if TARGET_ESP32_S2_DRONE_V1_2
             help
                 GPIO number (IOxx) MOTOR04_PIN
