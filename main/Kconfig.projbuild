@@ -78,17 +78,40 @@ menu "ESPDrone Config"
     menu "calibration angle"
         config PITCH_CALIB
             int "PITCH_CALIB deg*100"
-            range -200 200
+            range -500 500
             default 0
             help
                 if PITCH error angle is 0.90,set this 90
 
         config ROLL_CALIB
             int "ROLL_CALIB deg*100"
-            range -200 200
+            range -500 500
             default 0
             help
                 if ROLL error angle is 0.90,set this 90
+    endmenu
+
+    menu "imu rotation"
+        config IMU_ROT_PITCH
+            int "IMU rotation pitch deg*100"
+            range -18000 18000
+            default 0
+            help
+                Adjust the initial pitch Euler angle (deg*100) to match a rotated IMU board before fine tuning with PITCH_CALIB.
+
+        config IMU_ROT_ROLL
+            int "IMU rotation roll deg*100"
+            range -18000 18000
+            default 0
+            help
+                Adjust the initial roll Euler angle (deg*100) to match a rotated IMU board before fine tuning with ROLL_CALIB.
+
+        config IMU_ROT_YAW
+            int "IMU rotation yaw deg*100"
+            range -18000 18000
+            default 0
+            help
+                Adjust the initial yaw Euler angle (deg*100) to compensate for a rotated IMU board without changing heading calibration.
     endmenu
 
     menu "system"

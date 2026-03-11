@@ -120,6 +120,26 @@
 #define PITCH_CALIB (CONFIG_PITCH_CALIB*1.0/100)
 #define ROLL_CALIB (CONFIG_ROLL_CALIB*1.0/100)
 
+#ifndef CONFIG_IMU_ROT_PITCH
+#define CONFIG_IMU_ROT_PITCH 0
+#endif
+
+#ifndef CONFIG_IMU_ROT_ROLL
+#define CONFIG_IMU_ROT_ROLL 0
+#endif
+
+#ifndef CONFIG_IMU_ROT_YAW
+#define CONFIG_IMU_ROT_YAW 0
+#endif
+
+#define IMU_ROT_PITCH (CONFIG_IMU_ROT_PITCH*1.0/100)
+#define IMU_ROT_ROLL (CONFIG_IMU_ROT_ROLL*1.0/100)
+#define IMU_ROT_YAW (CONFIG_IMU_ROT_YAW*1.0/100)
+
+#define IMU_ROT_PITCH_RAD (IMU_ROT_PITCH * (float)M_PI / 180)
+#define IMU_ROT_ROLL_RAD (IMU_ROT_ROLL * (float)M_PI / 180)
+#define IMU_ROT_YAW_RAD (IMU_ROT_YAW * (float)M_PI / 180)
+
 typedef struct {
     Axis3f bias;
     Axis3f variance;
@@ -188,6 +208,12 @@ float cosPitch;
 float sinPitch;
 float cosRoll;
 float sinRoll;
+static float imuRotCosPitch = 1.0f;
+static float imuRotSinPitch = 0.0f;
+static float imuRotCosRoll = 1.0f;
+static float imuRotSinRoll = 0.0f;
+static float imuRotCosYaw = 1.0f;
+static float imuRotSinYaw = 0.0f;
 
 // This buffer needs to hold data from all sensors
 static uint8_t buffer[SENSORS_MPU6050_BUFF_LEN + SENSORS_MAG_BUFF_LEN + SENSORS_BARO_BUFF_LEN] = {0};
@@ -196,6 +222,7 @@ static void processAccGyroMeasurements(const uint8_t *buffer);
 static void processMagnetometerMeasurements(const uint8_t *buffer);
 static void processBarometerMeasurements(const uint8_t *buffer);
 static void sensorsSetupSlaveRead(void);
+static void sensorsApplyImuRotation(Axis3f *vector);
 
 #ifdef GYRO_GYRO_BIAS_LIGHT_WEIGHT
 static bool processGyroBiasNoBuffer(int16_t gx, int16_t gy, int16_t gz, Axis3f *gyroBiasOut);
@@ -330,6 +357,7 @@ void processMagnetometerMeasurements(const uint8_t *buffer)
         sensorData.mag.x = (float)headingx / MAG_GAUSS_PER_LSB; //to gauss
         sensorData.mag.y = (float)headingy / MAG_GAUSS_PER_LSB;
         sensorData.mag.z = (float)headingz / MAG_GAUSS_PER_LSB;
+        sensorsApplyImuRotation(&sensorData.mag);
         DEBUG_PRINTI("hmc5883l DATA ready");
     } else {
 
@@ -384,6 +412,7 @@ void processAccGyroMeasurements(const uint8_t *buffer)
     sensorData.gyro.z = (gyroRaw.z - gyroBias.z) * SENSORS_DEG_PER_LSB_CFG;
     /* sensors step 2.5 low pass filter */
     applyAxis3fLpf((lpf2pData *)(&gyroLpf), &sensorData.gyro);
+    sensorsApplyImuRotation(&sensorData.gyro);
 
 #ifdef CONFIG_TARGET_ESPLANE_V1
     accScaled.x = (accelRaw.x) * SENSORS_G_PER_LSB_CFG / accScale;
@@ -395,6 +424,7 @@ void processAccGyroMeasurements(const uint8_t *buffer)
     accScaled.z = (accelRaw.z) * SENSORS_G_PER_LSB_CFG / accScale;
 
     /* sensors step 2.6 Compensate for a miss-aligned accelerometer. */
+    sensorsApplyImuRotation(&accScaled);
     sensorsAccAlignToGravity(&accScaled, &sensorData.acc);
     applyAxis3fLpf((lpf2pData *)(&accLpf), &sensorData.acc);
 }
@@ -548,7 +578,14 @@ static void sensorsDeviceInit(void)
     sinPitch = sinf(PITCH_CALIB * (float)M_PI / 180);
     cosRoll = cosf(ROLL_CALIB * (float)M_PI / 180);
     sinRoll = sinf(ROLL_CALIB * (float)M_PI / 180);
+    imuRotCosPitch = cosf(IMU_ROT_PITCH_RAD);
+    imuRotSinPitch = sinf(IMU_ROT_PITCH_RAD);
+    imuRotCosRoll = cosf(IMU_ROT_ROLL_RAD);
+    imuRotSinRoll = sinf(IMU_ROT_ROLL_RAD);
+    imuRotCosYaw = cosf(IMU_ROT_YAW_RAD);
+    imuRotSinYaw = sinf(IMU_ROT_YAW_RAD);
     DEBUG_PRINTI("pitch_calib = %f,roll_calib = %f",PITCH_CALIB,ROLL_CALIB);
+    DEBUG_PRINTI("imu_rot pitch = %f, roll = %f, yaw = %f", IMU_ROT_PITCH, IMU_ROT_ROLL, IMU_ROT_YAW);
 }
 
 static void sensorsSetupSlaveRead(void)
@@ -995,6 +1032,24 @@ static void sensorsAccAlignToGravity(Axis3f *in, Axis3f *out)
     out->x = ry.x;
     out->y = ry.y;
     out->z = ry.z;
+}
+
+static void sensorsApplyImuRotation(Axis3f *vector)
+{
+    Axis3f roll;
+    Axis3f pitch;
+
+    roll.x = vector->x;
+    roll.y = vector->y * imuRotCosRoll - vector->z * imuRotSinRoll;
+    roll.z = vector->y * imuRotSinRoll + vector->z * imuRotCosRoll;
+
+    pitch.x = roll.x * imuRotCosPitch - roll.z * imuRotSinPitch;
+    pitch.y = roll.y;
+    pitch.z = roll.x * imuRotSinPitch + roll.z * imuRotCosPitch;
+
+    vector->x = pitch.x * imuRotCosYaw - pitch.y * imuRotSinYaw;
+    vector->y = pitch.x * imuRotSinYaw + pitch.y * imuRotCosYaw;
+    vector->z = pitch.z;
 }
 
 /** set different low pass filters in different environment
